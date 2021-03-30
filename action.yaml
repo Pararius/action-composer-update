@@ -1,0 +1,65 @@
+name: 'Composer update'
+description: 'Runs a composer update and creates a PR if there are any updates'
+inputs:
+  working-dir:
+    description: 'Directory of the composer.lock'
+    required: true
+    default: './'
+  composer-token:
+    description: 'API token for composer'
+    required: true
+  base-branch:
+    description: 'Branch to create a PR against'
+    required: true
+    default: master
+runs:
+  using: "composite"
+  env:
+    DOCKER_BUILDKIT: 1
+    COMPOSER_CACHE_DIR: /tmp/composer-cache
+    COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
+  steps:
+  - uses: actions/checkout@v2.3.4
+
+  - name: Setup cache
+    uses: actions/cache@v2.1.4
+    with:
+      path: /tmp/composer-cache
+      key: ${{ runner.os }}-${{ hashFiles('${{ inputs.working-dir }}composer.lock') }}
+
+  - name: Install dependencies
+    run: composer install ${{ env.COMPOSER_INSTALL_ARGS }}
+    env:
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
+
+  - name: Update dependencies
+    run: composer update ${{ env.COMPOSER_INSTALL_ARGS }}
+    env:
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
+
+  - name: Create diff
+    id: get-diff
+    run: |
+      composer global require davidrjonas/composer-lock-diff:^1.0
+      diff=$(~/.composer/vendor/bin/composer-lock-diff --md -p ${{ inputs.working-dir }})
+      diff="${diff//'%'/'%25'}"
+      diff="${diff//$'\n'/'%0A'}"
+      diff="${diff//$'\r'/'%0D'}"
+      echo "::set-output name=diff::$diff"
+    env:
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
+
+  - name: Current date
+    run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+
+  - name: Create pull request
+    uses: peter-evans/create-pull-request@v3.8.2
+    with:
+      token: ${{ inputs.composer-token }}
+      branch: php-update-${{ env.DATE }}
+      branch-suffix: random
+      commit-message: '[ci] updated PHP dependencies'
+      title: Updated PHP dependencies
+      body: ${{ steps.get-diff.outputs.diff }}
+      labels: dependencies
+      base: ${{ inputs.base-branch }}

@@ -14,10 +14,6 @@ inputs:
     default: master
 runs:
   using: "composite"
-  env:
-    DOCKER_BUILDKIT: 1
-    COMPOSER_CACHE_DIR: /tmp/composer-cache
-    COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
   steps:
   - uses: actions/checkout@v2.3.4
 
@@ -30,11 +26,15 @@ runs:
   - name: Install dependencies
     run: composer install ${{ env.COMPOSER_INSTALL_ARGS }}
     env:
+      COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
   - name: Update dependencies
     run: composer update ${{ env.COMPOSER_INSTALL_ARGS }}
     env:
+      COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
   - name: Create diff

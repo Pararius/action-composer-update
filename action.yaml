@@ -20,6 +20,7 @@ runs:
   using: "composite"
   steps:
     - name: Install dependencies
+      shell: bash
       run: composer install ${{ env.COMPOSER_INSTALL_ARGS }}
       env:
         COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
@@ -27,6 +28,7 @@ runs:
         COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
     - name: Update dependencies
+      shell: bash
       run: composer update ${{ env.COMPOSER_INSTALL_ARGS }}
       env:
         COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
@@ -34,6 +36,7 @@ runs:
         COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
     - name: Create diff
+      shell: bash
       id: get-diff
       run: |
         composer global require davidrjonas/composer-lock-diff:^1.0

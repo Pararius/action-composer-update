@@ -21,10 +21,10 @@ jobs:
     - name: Setup cache
       uses: actions/cache@v2.1.4
       with:
-        path: /tmp/composer-cache
+        path: ${{ COMPOSER_CACHE_DIR }}
         key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
 
-    - uses: Pararius/action-composer-update@main
+    - uses: Pararius/action-composer-update@v0.0.2
       id: composer-update
       with:
         working-dir: ./

@@ -8,58 +8,39 @@ inputs:
   composer-token:
     description: 'API token for composer'
     required: true
-  base-branch:
-    description: 'Branch to create a PR against'
+  composer-cache:
+    description: 'Path to composer cache'
     required: true
-    default: master
+    default: /tmp/composer-cache
+outputs:
+  diff:
+    description: "Markdown table with the changed versions"
+    value: ${{ steps.get-diff.outputs.diff }}
 runs:
   using: "composite"
   steps:
-  - uses: actions/checkout@v2.3.4
+    - name: Install dependencies
+      run: composer install ${{ env.COMPOSER_INSTALL_ARGS }}
+      env:
+        COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
+        COMPOSER_CACHE_DIR: ${{ inputs.composer-cache }}
+        COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
-  - name: Setup cache
-    uses: actions/cache@v2.1.4
-    with:
-      path: /tmp/composer-cache
-      key: ${{ runner.os }}-${{ hashFiles('${{ inputs.working-dir }}composer.lock') }}
+    - name: Update dependencies
+      run: composer update ${{ env.COMPOSER_INSTALL_ARGS }}
+      env:
+        COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
+        COMPOSER_CACHE_DIR: ${{ inputs.composer-cache }}
+        COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
-  - name: Install dependencies
-    run: composer install ${{ env.COMPOSER_INSTALL_ARGS }}
-    env:
-      COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
-      COMPOSER_CACHE_DIR: /tmp/composer-cache
-      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
-
-  - name: Update dependencies
-    run: composer update ${{ env.COMPOSER_INSTALL_ARGS }}
-    env:
-      COMPOSER_INSTALL_ARGS: --no-progress --no-scripts --ignore-platform-reqs --no-autoloader -d ${{ inputs.working-dir }}
-      COMPOSER_CACHE_DIR: /tmp/composer-cache
-      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
-
-  - name: Create diff
-    id: get-diff
-    run: |
-      composer global require davidrjonas/composer-lock-diff:^1.0
-      diff=$(~/.composer/vendor/bin/composer-lock-diff --md -p ${{ inputs.working-dir }})
-      diff="${diff//'%'/'%25'}"
-      diff="${diff//$'\n'/'%0A'}"
-      diff="${diff//$'\r'/'%0D'}"
-      echo "::set-output name=diff::$diff"
-    env:
-      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
-
-  - name: Current date
-    run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-
-  - name: Create pull request
-    uses: peter-evans/create-pull-request@v3.8.2
-    with:
-      token: ${{ inputs.composer-token }}
-      branch: php-update-${{ env.DATE }}
-      branch-suffix: random
-      commit-message: '[ci] updated PHP dependencies'
-      title: Updated PHP dependencies
-      body: ${{ steps.get-diff.outputs.diff }}
-      labels: dependencies
-      base: ${{ inputs.base-branch }}
+    - name: Create diff
+      id: get-diff
+      run: |
+        composer global require davidrjonas/composer-lock-diff:^1.0
+        diff=$(~/.composer/vendor/bin/composer-lock-diff --md -p ${{ inputs.working-dir }})
+        diff="${diff//'%'/'%25'}"
+        diff="${diff//$'\n'/'%0A'}"
+        diff="${diff//$'\r'/'%0D'}"
+        echo "::set-output name=diff::$diff"
+      env:
+        COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'

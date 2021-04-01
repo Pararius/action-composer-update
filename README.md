@@ -21,7 +21,7 @@ jobs:
     - name: Setup cache
       uses: actions/cache@v2.1.4
       with:
-        path: ${{ COMPOSER_CACHE_DIR }}
+        path: $COMPOSER_CACHE_DIR
         key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
 
     - uses: Pararius/action-composer-update@v0.0.2
@@ -29,7 +29,7 @@ jobs:
       with:
         working-dir: ./
         composer-token: ${{ secrets.COMPOSER_TOKEN }}
-        composer-cache: ${{ COMPOSER_CACHE_DIR }}
+        composer-cache: $COMPOSER_CACHE_DIR
 
     - name: Current date
       run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV

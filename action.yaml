@@ -1,5 +1,5 @@
 name: 'Composer update'
-description: 'Runs a composer update and creates a PR if there are any updates'
+description: 'Runs a composer update such that you can create a PR if there are any updates'
 inputs:
   working-dir:
     description: 'Directory of the composer.lock'

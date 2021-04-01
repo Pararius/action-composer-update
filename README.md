@@ -29,7 +29,7 @@ jobs:
       with:
         working-dir: ./
         composer-token: ${{ secrets.COMPOSER_TOKEN }}
-        base-branch: master
+        composer-cache: ${{ COMPOSER_CACHE_DIR }}
 
     - name: Current date
       run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV

@@ -12,8 +12,8 @@ inputs:
     description: 'Path to composer cache'
     required: true
     default: /tmp/composer-cache
-  ignore-platform-reqs:
-    description: 'What platform requirements should be ignored'
+  composer-arguments:
+    description: 'Additional composer arguments'
     required: true
     default: --ignore-platform-req=ext-gprc
 outputs:
@@ -25,14 +25,14 @@ runs:
   steps:
     - name: Install dependencies
       shell: bash
-      run: composer install --no-progress --no-scripts ${{ inputs.ignore-platform-reqs }} --no-autoloader -d ${{ inputs.working-dir }}
+      run: composer install --no-progress --no-scripts --no-autoloader -d ${{ inputs.working-dir }} ${{ inputs.composer-arguments }}
       env:
         COMPOSER_CACHE_DIR: ${{ inputs.composer-cache }}
         COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
     - name: Update dependencies
       shell: bash
-      run: composer update --no-progress --no-scripts ${{ inputs.ignore-platform-reqs }} --no-autoloader -d ${{ inputs.working-dir }}
+      run: composer update --no-progress --no-scripts --no-autoloader -d ${{ inputs.working-dir }} ${{ inputs.composer-arguments }}
       env:
         COMPOSER_CACHE_DIR: ${{ inputs.composer-cache }}
         COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'

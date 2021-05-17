@@ -16,10 +16,17 @@ inputs:
     description: 'Additional composer arguments'
     required: true
     default: --ignore-platform-req=ext-grpc
+  check-outdated:
+    description: 'Check if we should return the outdated packages'
+    required: true
+    default: '0'
 outputs:
   diff:
     description: "Markdown table with the changed versions"
     value: ${{ steps.get-diff.outputs.diff }}
+  outdated:
+    description: "Script output with the outdated packages that are left after updating"
+    value: ${{ steps.get-outdated.outputs.outdated }}
 runs:
   using: "composite"
   steps:
@@ -38,8 +45,8 @@ runs:
         COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
 
     - name: Create diff
-      shell: bash
       id: get-diff
+      shell: bash
       run: |
         composer global require davidrjonas/composer-lock-diff:^1.0
         diff=$(~/.composer/vendor/bin/composer-lock-diff --md -p ${{ inputs.working-dir }})
@@ -48,4 +55,16 @@ runs:
         diff="${diff//$'\r'/'%0D'}"
         echo "::set-output name=diff::$diff"
       env:
+        COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'
+
+    - name: Check outdated
+      id: get-outdated
+      if: ${{ inputs.check-outdated }}
+      shell: bash
+      run: |
+        outdated=$(composer outdated -d ${{ inputs.working-dir }})
+        outdated="${outdated//$'\n'/'\n'}"
+        echo "::set-output name=outdated::$outdated"
+      env:
+        COMPOSER_CACHE_DIR: ${{ inputs.composer-cache }}
         COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ inputs.composer-token }}"}}'

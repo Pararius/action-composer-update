@@ -59,10 +59,9 @@ runs:
 
     - name: Check outdated
       id: get-outdated
-      if: ${{ inputs.check-outdated }}
       shell: bash
       run: |
-        outdated=$(composer outdated -d ${{ inputs.working-dir }})
+        [ "${{ inputs.check-outdated }}" = "1" ] && outdated=$(composer outdated -d ${{ inputs.working-dir }})
         outdated="${outdated//$'\n'/'\n'}"
         echo "::set-output name=outdated::$outdated"
       env:
